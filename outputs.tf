@@ -1,6 +1,6 @@
 output "cluster_name" {
     description = "Cluster name is computed using aws_region and name variables"
-    value       = "${kops_cluster.cluster.metadata[0].name}"
+    value       = "${local.name}"
 }
 
 output "admin_cidrs" {

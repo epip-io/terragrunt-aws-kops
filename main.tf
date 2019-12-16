@@ -7,6 +7,7 @@ provider "kops" {
 }
 
 locals {
+    name = format("%s.%s", var.aws_region, var.name)
     private_subnets = [
         for subnet in setproduct(var.azs, var.private_subnets, var.private_subnets_cidr_blocks, var.private_subnets_egresses) : {
             name = format("%s-private-%s", var.name, subnet[0])
@@ -48,7 +49,7 @@ locals {
 
 resource "kops_cluster" "cluster" {
     metadata {
-        name = format("%s.%s", var.aws_region, var.name)
+        name = local.name
     }
 
     spec {
@@ -183,13 +184,10 @@ resource "kops_instance_group" "masters" {
 }
 
 resource "kops_instance_group" "nodes" {
-    for_each = {
-        for az in setproduct(var.azs, local.private_subnets):
-        az[0] => (az[1].hosts - 3)
-    }
+    for_each = local.private_subnets
 
     metadata {
-        name = format("nodes-%s", each)
+        name = format("nodes-%s", each.values.zone)
     }
 
     spec {
@@ -204,22 +202,22 @@ resource "kops_instance_group" "nodes" {
         }
 
         cloud_labels = tomap({
-            format("kubernetes.io/cluster/%s", var.name) = "owned"
+            format("kubernetes.io/cluster/%s", local.name) = "owned"
         })
 
         node_labels = tomap({
             "k8s.io/cluster-autoscaler/enabled" = ""
-            format("k8s.io/cluster-autoscaler/%s", var.name) = ""
-            "kops.k8s.io/instancegroup" = format("nodes-%s", each)
+            format("k8s.io/cluster-autoscaler/%s", local.name) = ""
+            "kops.k8s.io/instancegroup" = format("nodes-%s", each.value.zone)
         })
 
         role = "Node"
 
         subnets = [
-            each
+            each.value.zone
         ]
 
         min_size = var.nodes_min_size
-        max_size = each.value
+        max_size = (each.value.hosts - 5)
     }
 }
