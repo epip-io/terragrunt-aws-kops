@@ -18,10 +18,12 @@ variable "dns_zone" {
 
 variable "oidc_issuer_url" {
     type = string
+    default = ""
 }
 
 variable "oidc_client_id" {
     type = string
+    default = ""
 }
 
 variable "oidc_username_claim" {
