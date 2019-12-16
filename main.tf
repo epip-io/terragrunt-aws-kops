@@ -9,22 +9,22 @@ provider "kops" {
 locals {
     private_subnets = [
         for subnet in setproduct(var.azs, var.private_subnets, var.private_subnets_cidr_blocks, var.private_subnets_egresses) : {
-            name = format("%s-private-%s", var.name, subnet[0].key)
-            id = subnet[1].key
-            zone = subnet[0].key
-            cidr = subnet[2].key
+            name = format("%s-private-%s", var.name, subnet[0])
+            id = subnet[1]
+            zone = subnet[0]
+            cidr = subnet[2]
             type = "Private"
-            egress = subnet[3].key
-            hosts = pow(2, parseint(split("/", subnet[2].key)[1], 10))
+            egress = subnet[3]
+            hosts = pow(2, parseint(split("/", subnet[2])[1], 10))
         }
     ]
 
     utility_subnets = [
         for subnet in setproduct(var.azs, var.utility_subnets, var.utility_subnets_cidr_blocks) : {
-            name = format("%s-utility-%s", var.name, subnet[0].key)
-            id   = subnet[1].key
-            zone = subnet[0].key
-            cidr = subnet[2].key
+            name = format("%s-utility-%s", var.name, subnet[0])
+            id   = subnet[1]
+            zone = subnet[0]
+            cidr = subnet[2]
             type = "Utility"
         }
     ]
@@ -185,11 +185,11 @@ resource "kops_instance_group" "masters" {
 resource "kops_instance_group" "nodes" {
     for_each = {
         for az in setproduct(var.azs, local.private_subnets):
-        az[0].key => (az[1].value.hosts - 3)
+        az[0] => (az[1].value.hosts - 3)
     }
 
     metadata {
-        name = format("nodes-%s", each.key)
+        name = format("nodes-%s", each)
     }
 
     spec {
@@ -210,13 +210,13 @@ resource "kops_instance_group" "nodes" {
         node_labels = tomap({
             "k8s.io/cluster-autoscaler/enabled" = ""
             format("k8s.io/cluster-autoscaler/%s", var.name) = ""
-            "kops.k8s.io/instancegroup" = format("nodes-%s", each.key)
+            "kops.k8s.io/instancegroup" = format("nodes-%s", each)
         })
 
         role = "Node"
 
         subnets = [
-            each.key
+            each
         ]
 
         min_size = var.nodes_min_size
