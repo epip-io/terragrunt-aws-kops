@@ -185,7 +185,7 @@ resource "kops_instance_group" "masters" {
 resource "kops_instance_group" "nodes" {
     for_each = {
         for az in setproduct(var.azs, local.private_subnets):
-        az[0] => (az[1].value.hosts - 3)
+        az[0] => (az[1].hosts - 3)
     }
 
     metadata {
