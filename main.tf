@@ -187,7 +187,7 @@ resource "kops_instance_group" "nodes" {
     for_each = local.private_subnets
 
     metadata {
-        name = format("nodes-%s", each.values.zone)
+        name = format("nodes-%s", each.value.zone)
     }
 
     spec {
