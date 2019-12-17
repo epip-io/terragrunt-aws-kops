@@ -8,7 +8,7 @@ provider "kops" {
 
 locals {
     name = format("%s.%s", var.aws_region, var.name)
-    private_subnets = [
+    private_subnets = flatten([
         for subnet in setproduct(var.azs, var.private_subnets, var.private_subnets_cidr_blocks, var.private_subnets_egresses) : {
             name = format("%s-private-%s", var.name, subnet[0])
             id = subnet[1]
@@ -18,9 +18,9 @@ locals {
             egress = subnet[3]
             hosts = pow(2, parseint(split("/", subnet[2])[1], 10)) - 5
         }
-    ]
+    ])
 
-    utility_subnets = [
+    utility_subnets = flatten([
         for subnet in setproduct(var.azs, var.utility_subnets, var.utility_subnets_cidr_blocks) : {
             name = format("%s-utility-%s", var.name, subnet[0])
             id   = subnet[1]
@@ -28,7 +28,7 @@ locals {
             cidr = subnet[2]
             type = "Utility"
         }
-    ]
+    ])
 
     subnets = flatten([local.private_subnets, local.utility_subnets])
 
