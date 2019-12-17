@@ -16,7 +16,7 @@ locals {
             cidr = subnet[2]
             type = "Private"
             egress = subnet[3]
-            hosts = pow(2, parseint(split("/", subnet[2])[1], 10))
+            hosts = pow(2, parseint(split("/", subnet[2])[1], 10)) - 5
         }
     ]
 
@@ -184,10 +184,13 @@ resource "kops_instance_group" "masters" {
 }
 
 resource "kops_instance_group" "nodes" {
-    for_each = toset(local.private_subnets)
+    for_each = {
+        for subnet in local.private_subnets:
+        subnet.zone => subnet.hosts
+    }
 
     metadata {
-        name = format("nodes-%s", each.value.zone)
+        name = format("nodes-%s", each.key)
     }
 
     spec {
@@ -208,16 +211,16 @@ resource "kops_instance_group" "nodes" {
         node_labels = tomap({
             "k8s.io/cluster-autoscaler/enabled" = ""
             format("k8s.io/cluster-autoscaler/%s", local.name) = ""
-            "kops.k8s.io/instancegroup" = format("nodes-%s", each.value.zone)
+            "kops.k8s.io/instancegroup" = format("nodes-%s", each.key)
         })
 
         role = "Node"
 
         subnets = [
-            each.value.zone
+            each.key
         ]
 
         min_size = var.nodes_min_size
-        max_size = (each.value.hosts - 5)
+        max_size = each.value
     }
 }
