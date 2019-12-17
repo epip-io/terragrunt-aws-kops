@@ -8,27 +8,27 @@ provider "kops" {
 
 locals {
     name = format("%s.%s", var.aws_region, var.name)
-    private_subnets = distinct([
-        for subnet in setproduct(var.azs, var.private_subnets, var.private_subnets_cidr_blocks, var.private_subnets_egresses) : {
-            name = format("%s-private-%s", var.name, subnet[0])
-            id = subnet[1]
-            zone = subnet[0]
-            cidr = subnet[2]
+    private_subnets = [
+        for az in var.azs: {
+            name = format("%s-private-%s", var.name, az)
+            id = element(var.private_subnets, index(var.azs, az))
+            zone = az
+            cidr = element(var.private_subnets_cidr_blocks, index(var.azs, az))
             type = "Private"
-            egress = subnet[3]
-            hosts = pow(2, parseint(split("/", subnet[2])[1], 10)) - 5
+            egress = element(var.private_subnets_egresses, index(var.azs, az))
+            hosts = pow(2, parseint(split("/", element(var.private_subnets_cidr_blocks, index(var.azs, az)))[1], 10)) - 5
         }
-    ])
+    ]
 
-    utility_subnets = distinct([
-        for subnet in setproduct(var.azs, var.utility_subnets, var.utility_subnets_cidr_blocks) : {
-            name = format("%s-utility-%s", var.name, subnet[0])
-            id   = subnet[1]
-            zone = subnet[0]
-            cidr = subnet[2]
+    utility_subnets = [
+        for az in var.azs: {
+            name = format("%s-utility-%s", var.name, az)
+            id = element(var.utility_subnets, index(var.azs, az))
+            zone = az
+            cidr = element(var.utility_subnets_cidr_blocks, index(var.azs, az))
             type = "Utility"
         }
-    ])
+    ]
 
     subnets = flatten([local.private_subnets, local.utility_subnets])
 
@@ -151,7 +151,7 @@ resource "kops_cluster" "cluster" {
 }
 
 resource "kops_instance_group" "masters" {
-    for_each = var.azs
+    for_each = toset(var.azs)
 
     metadata {
         name = format("master-%s", each.value)
