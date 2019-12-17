@@ -8,7 +8,7 @@ output "admin_cidrs" {
     value       = var.admin_cidrs
 }
 
-output "nodes_igs" {
-    description = "List of Nodes Instance Group Names"
-    value       = kops_instance_group.nodes
-}
+# output "nodes_igs" {
+#     description = "List of Nodes Instance Group Names"
+#     value       = kops_instance_group.nodes
+# }

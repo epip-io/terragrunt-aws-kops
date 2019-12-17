@@ -150,77 +150,77 @@ resource "kops_cluster" "cluster" {
     }
 }
 
-resource "kops_instance_group" "masters" {
-    for_each = toset(var.azs)
+# resource "kops_instance_group" "masters" {
+#     for_each = toset(var.azs)
 
-    metadata {
-        name = format("master-%s", each.value)
+#     metadata {
+#         name = format("master-%s", each.value)
 
-        labels = tomap({
-            "kops.k8s.io/cluster" = var.name
-        })
-    }
+#         labels = tomap({
+#             "kops.k8s.io/cluster" = var.name
+#         })
+#     }
 
-    spec {
-        machine_type = var.master_machine_type
+#     spec {
+#         machine_type = var.master_machine_type
 
-        cloud_labels = tomap({
-            format("kubernetes.io/cluster/%s", var.name) = "owned"
-        })
+#         cloud_labels = tomap({
+#             format("kubernetes.io/cluster/%s", var.name) = "owned"
+#         })
 
-        node_labels = tomap({
-            "kops.k8s.io/instancegroup" = format("master-%s", each.value)
-        })
+#         node_labels = tomap({
+#             "kops.k8s.io/instancegroup" = format("master-%s", each.value)
+#         })
 
-        role = "Master"
+#         role = "Master"
 
-        subnets = [
-            each.value
-        ]
+#         subnets = [
+#             each.value
+#         ]
 
-        min_size = 1
-        max_size = 1
-    }
-}
+#         min_size = 1
+#         max_size = 1
+#     }
+# }
 
-resource "kops_instance_group" "nodes" {
-    for_each = {
-        for subnet in local.private_subnets:
-        subnet.zone => subnet.hosts
-    }
+# resource "kops_instance_group" "nodes" {
+#     for_each = {
+#         for subnet in local.private_subnets:
+#         subnet.zone => subnet.hosts
+#     }
 
-    metadata {
-        name = format("nodes-%s", each.key)
-    }
+#     metadata {
+#         name = format("nodes-%s", each.key)
+#     }
 
-    spec {
-        machine_type = var.nodes_machine_type
-        max_price    = var.nodes_max_price
-        mixed_instances_policy {
-            instances                = var.nodes_mixed_instances
-            spot_allocation_strategy = var.nodes_allocation_strategy
-            spot_instance_pools      = var.nodes_instance_pools
+#     spec {
+#         machine_type = var.nodes_machine_type
+#         max_price    = var.nodes_max_price
+#         mixed_instances_policy {
+#             instances                = var.nodes_mixed_instances
+#             spot_allocation_strategy = var.nodes_allocation_strategy
+#             spot_instance_pools      = var.nodes_instance_pools
 
-            on_demand_base = 0
-        }
+#             on_demand_base = 0
+#         }
 
-        cloud_labels = tomap({
-            format("kubernetes.io/cluster/%s", local.name) = "owned"
-        })
+#         cloud_labels = tomap({
+#             format("kubernetes.io/cluster/%s", local.name) = "owned"
+#         })
 
-        node_labels = tomap({
-            "k8s.io/cluster-autoscaler/enabled" = ""
-            format("k8s.io/cluster-autoscaler/%s", local.name) = ""
-            "kops.k8s.io/instancegroup" = format("nodes-%s", each.key)
-        })
+#         node_labels = tomap({
+#             "k8s.io/cluster-autoscaler/enabled" = ""
+#             format("k8s.io/cluster-autoscaler/%s", local.name) = ""
+#             "kops.k8s.io/instancegroup" = format("nodes-%s", each.key)
+#         })
 
-        role = "Node"
+#         role = "Node"
 
-        subnets = [
-            each.key
-        ]
+#         subnets = [
+#             each.key
+#         ]
 
-        min_size = var.nodes_min_size
-        max_size = each.value
-    }
-}
+#         min_size = var.nodes_min_size
+#         max_size = each.value
+#     }
+# }
